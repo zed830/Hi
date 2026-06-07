@@ -1,0 +1,334 @@
+-- Roblox Aimbot (head) with key "Aim123" + language choice
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- OPTIMIZATION
+game:GetService("ChangeHistoryService"):SetEnabled(false)
+settings().Rendering.QualityLevel = 1
+
+local function applyDarkPlastic()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            obj.Material = Enum.Material.Plastic
+            obj.Reflectance = 0
+            if obj:IsA("MeshPart") then obj.TextureID = "" end
+        elseif obj:IsA("Decal") or obj:IsA("Texture") then
+            obj.Transparency = 1
+        end
+    end
+end
+task.spawn(applyDarkPlastic)
+
+-- KEY AUTHENTICATION
+local authGui = Instance.new("ScreenGui")
+authGui.Name = "AuthGUI"
+authGui.ResetOnSpawn = false
+authGui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+local authFrame = Instance.new("Frame")
+authFrame.Size = UDim2.new(0, 350, 0, 180)
+authFrame.Position = UDim2.new(0.5, -175, 0.5, -90)
+authFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+authFrame.BorderSizePixel = 2
+authFrame.BorderColor3 = Color3.fromRGB(255, 50, 50)
+authFrame.Parent = authGui
+
+local authTitle = Instance.new("TextLabel")
+authTitle.Size = UDim2.new(1, 0, 0, 45)
+authTitle.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+authTitle.Text = "ENTER KEY"
+authTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+authTitle.Font = Enum.Font.GothamBold
+authTitle.TextSize = 18
+authTitle.Parent = authFrame
+
+local keyBox = Instance.new("TextBox")
+keyBox.Size = UDim2.new(0.6, 0, 0, 40)
+keyBox.Position = UDim2.new(0.2, 0, 0.4, 0)
+keyBox.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+keyBox.Text = ""
+keyBox.PlaceholderText = "Enter key..."
+keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyBox.Font = Enum.Font.Gotham
+keyBox.TextSize = 16
+keyBox.Parent = authFrame
+
+local submitBtn = Instance.new("TextButton")
+submitBtn.Size = UDim2.new(0.4, 0, 0, 40)
+submitBtn.Position = UDim2.new(0.3, 0, 0.7, 0)
+submitBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+submitBtn.Text = "SUBMIT"
+submitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+submitBtn.Font = Enum.Font.GothamBold
+submitBtn.TextSize = 16
+submitBtn.Parent = authFrame
+
+-- LANGUAGE SELECTION GUI (after key)
+local function showLanguageChoice()
+    authGui:Destroy()
+    
+    local languageGui = Instance.new("ScreenGui")
+    languageGui.Name = "LanguageSelect"
+    languageGui.ResetOnSpawn = false
+    languageGui.Parent = localPlayer:WaitForChild("PlayerGui")
+    
+    local choiceFrame = Instance.new("Frame")
+    choiceFrame.Size = UDim2.new(0, 320, 0, 160)
+    choiceFrame.Position = UDim2.new(0.5, -160, 0.5, -80)
+    choiceFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    choiceFrame.BorderSizePixel = 2
+    choiceFrame.BorderColor3 = Color3.fromRGB(255, 50, 50)
+    choiceFrame.Parent = languageGui
+    
+    local choiceTitle = Instance.new("TextLabel")
+    choiceTitle.Size = UDim2.new(1, 0, 0, 45)
+    choiceTitle.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+    choiceTitle.Text = "SELECT LANGUAGE"
+    choiceTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    choiceTitle.Font = Enum.Font.GothamBold
+    choiceTitle.TextSize = 18
+    choiceTitle.Parent = choiceFrame
+    
+    local engBtn = Instance.new("TextButton")
+    engBtn.Size = UDim2.new(0.4, 0, 0, 45)
+    engBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
+    engBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+    engBtn.Text = "ENGLISH"
+    engBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    engBtn.Font = Enum.Font.GothamBold
+    engBtn.TextSize = 16
+    engBtn.Parent = choiceFrame
+    
+    local rusBtn = Instance.new("TextButton")
+    rusBtn.Size = UDim2.new(0.4, 0, 0, 45)
+    rusBtn.Position = UDim2.new(0.55, 0, 0.55, 0)
+    rusBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+    rusBtn.Text = "РУССКИЙ"
+    rusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    rusBtn.Font = Enum.Font.GothamBold
+    rusBtn.TextSize = 16
+    rusBtn.Parent = choiceFrame
+    
+    -- AIM FUNCTION
+    local function aimAtHead(targetPlayer)
+        if not targetPlayer or not targetPlayer.Character then return false end
+        local head = targetPlayer.Character:FindFirstChild("Head")
+        if not head then return false end
+        camera.CFrame = CFrame.new(camera.CFrame.Position, head.Position)
+        return true
+    end
+    
+    -- CREATE MAIN AIMBOT GUI
+    local function createAimbotGUI(lang)
+        languageGui:Destroy()
+        
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "AimbotUI"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+        
+        local mainFrame = Instance.new("Frame")
+        mainFrame.Size = UDim2.new(0, 290, 0, 190)
+        mainFrame.Position = UDim2.new(0.5, -145, 0.7, 0)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        mainFrame.BorderSizePixel = 1
+        mainFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
+        mainFrame.Active = true
+        mainFrame.Draggable = true
+        mainFrame.Parent = screenGui
+        
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 28)
+        title.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+        title.Font = Enum.Font.GothamBold
+        title.TextSize = 14
+        if lang == "EN" then
+            title.Text = "TARGET SELECTION & AIMBOT"
+        else
+            title.Text = "ВЫБОР ЦЕЛИ И AIMBOT"
+        end
+        title.TextColor3 = Color3.fromRGB(220, 220, 220)
+        title.Parent = mainFrame
+        
+        local playerListBox = Instance.new("ScrollingFrame")
+        playerListBox.Size = UDim2.new(0.9, 0, 0.48, 0)
+        playerListBox.Position = UDim2.new(0.05, 0, 0.18, 0)
+        playerListBox.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+        playerListBox.BorderSizePixel = 1
+        playerListBox.ScrollBarThickness = 8
+        playerListBox.Parent = mainFrame
+        
+        local playerListLayout = Instance.new("UIListLayout")
+        playerListLayout.Padding = UDim.new(0, 2)
+        playerListLayout.Parent = playerListBox
+        
+        local selectedPlayerLabel = Instance.new("TextLabel")
+        selectedPlayerLabel.Size = UDim2.new(0.9, 0, 0, 22)
+        selectedPlayerLabel.Position = UDim2.new(0.05, 0, 0.71, 0)
+        selectedPlayerLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 52)
+        selectedPlayerLabel.Font = Enum.Font.Gotham
+        selectedPlayerLabel.TextSize = 12
+        if lang == "EN" then
+            selectedPlayerLabel.Text = "TARGET: NONE"
+        else
+            selectedPlayerLabel.Text = "ЦЕЛЬ: НЕТ"
+        end
+        selectedPlayerLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+        selectedPlayerLabel.Parent = mainFrame
+        
+        local statusLabel = Instance.new("TextLabel")
+        statusLabel.Size = UDim2.new(0.45, 0, 0, 22)
+        statusLabel.Position = UDim2.new(0.05, 0, 0.84, 0)
+        statusLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        statusLabel.Font = Enum.Font.GothamBold
+        statusLabel.TextSize = 12
+        if lang == "EN" then
+            statusLabel.Text = "STATUS: OFF"
+        else
+            statusLabel.Text = "СТАТУС: ВЫКЛ"
+        end
+        statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        statusLabel.Parent = mainFrame
+        
+        local toggleBtn = Instance.new("TextButton")
+        toggleBtn.Size = UDim2.new(0.35, 0, 0, 24)
+        toggleBtn.Position = UDim2.new(0.6, 0, 0.83, 0)
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+        toggleBtn.Font = Enum.Font.Gotham
+        toggleBtn.TextSize = 12
+        if lang == "EN" then
+            toggleBtn.Text = "ON / OFF"
+        else
+            toggleBtn.Text = "ВКЛ / ВЫКЛ"
+        end
+        toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        toggleBtn.Parent = mainFrame
+        
+        local selectedPlayer = nil
+        local aimbotEnabled = false
+        
+        local function updatePlayerList()
+            for _, child in ipairs(playerListBox:GetChildren()) do
+                if child:IsA("TextButton") then child:Destroy() end
+            end
+            
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= localPlayer then
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(1, 0, 0, 26)
+                    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 68)
+                    btn.Text = player.Name
+                    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+                    btn.Font = Enum.Font.Gotham
+                    btn.TextSize = 12
+                    btn.Parent = playerListBox
+                    
+                    btn.MouseButton1Click:Connect(function()
+                        selectedPlayer = player
+                        if lang == "EN" then
+                            selectedPlayerLabel.Text = "TARGET: " .. player.Name
+                        else
+                            selectedPlayerLabel.Text = "ЦЕЛЬ: " .. player.Name
+                        end
+                    end)
+                end
+            end
+        end
+        
+        local function startAimbotLoop()
+            while aimbotEnabled do
+                if aimbotEnabled and selectedPlayer and selectedPlayer.Character then
+                    local head = selectedPlayer.Character:FindFirstChild("Head")
+                    if head then
+                        aimAtHead(selectedPlayer)
+                    end
+                end
+                task.wait(0.016)
+            end
+        end
+        
+        local function toggleAimbot()
+            aimbotEnabled = not aimbotEnabled
+            
+            if aimbotEnabled then
+                if not selectedPlayer then
+                    if lang == "EN" then
+                        statusLabel.Text = "STATUS: NO TARGET"
+                        statusLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
+                    else
+                        statusLabel.Text = "СТАТУС: НЕТ ЦЕЛИ"
+                        statusLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
+                    end
+                    aimbotEnabled = false
+                    return
+                end
+                if lang == "EN" then
+                    statusLabel.Text = "STATUS: ON"
+                    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                else
+                    statusLabel.Text = "СТАТУС: ВКЛ"
+                    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                end
+                mainFrame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+                task.spawn(startAimbotLoop)
+            else
+                if lang == "EN" then
+                    statusLabel.Text = "STATUS: OFF"
+                    statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                else
+                    statusLabel.Text = "СТАТУС: ВЫКЛ"
+                    statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                end
+                mainFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
+            end
+        end
+        
+        toggleBtn.MouseButton1Click:Connect(toggleAimbot)
+        
+        Players.PlayerAdded:Connect(function() updatePlayerList() end)
+        Players.PlayerRemoving:Connect(function()
+            if selectedPlayer and not Players:FindFirstChild(selectedPlayer.Name) then
+                selectedPlayer = nil
+                if lang == "EN" then
+                    selectedPlayerLabel.Text = "TARGET: NONE"
+                    if aimbotEnabled then
+                        aimbotEnabled = false
+                        statusLabel.Text = "STATUS: OFF (TARGET LOST)"
+                        statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        mainFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
+                    end
+                else
+                    selectedPlayerLabel.Text = "ЦЕЛЬ: НЕТ"
+                    if aimbotEnabled then
+                        aimbotEnabled = false
+                        statusLabel.Text = "СТАТУС: ВЫКЛ (ЦЕЛЬ ПОТЕРЯНА)"
+                        statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        mainFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
+                    end
+                end
+            end
+            updatePlayerList()
+        end)
+        
+        updatePlayerList()
+    end
+    
+    engBtn.MouseButton1Click:Connect(function() createAimbotGUI("EN") end)
+    rusBtn.MouseButton1Click:Connect(function() createAimbotGUI("RU") end)
+end
+
+-- KEY CHECK
+submitBtn.MouseButton1Click:Connect(function()
+    if keyBox.Text == "Aim123" then
+        showLanguageChoice()
+    else
+        keyBox.Text = ""
+        keyBox.PlaceholderText = "WRONG KEY!"
+        task.wait(1)
+        keyBox.PlaceholderText = "Enter key..."
+    end
+end)
