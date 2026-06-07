@@ -1,0 +1,211 @@
+-- Roblox Backdoor Scanner v1.0 (English)
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+local Lighting = game:GetService("Lighting")
+local localPlayer = Players.LocalPlayer
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BackdoorScanner"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 500, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -250, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(255, 50, 50)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+title.Text = "BACKDOOR SCANNER v1.0"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+local logBox = Instance.new("ScrollingFrame")
+logBox.Size = UDim2.new(0.95, 0, 0.7, 0)
+logBox.Position = UDim2.new(0.025, 0, 0.12, 0)
+logBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+logBox.BorderSizePixel = 1
+logBox.ScrollBarThickness = 10
+logBox.Parent = mainFrame
+
+local logLayout = Instance.new("UIListLayout")
+logLayout.Padding = UDim.new(0, 2)
+logLayout.Parent = logBox
+
+local scanBtn = Instance.new("TextButton")
+scanBtn.Size = UDim2.new(0.3, 0, 0, 35)
+scanBtn.Position = UDim2.new(0.1, 0, 0.86, 0)
+scanBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+scanBtn.Text = "SCAN"
+scanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+scanBtn.Font = Enum.Font.GothamBold
+scanBtn.TextSize = 16
+scanBtn.Parent = mainFrame
+
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0.3, 0, 0, 35)
+clearBtn.Position = UDim2.new(0.6, 0, 0.86, 0)
+clearBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+clearBtn.Text = "CLEAR"
+clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 16
+clearBtn.Parent = mainFrame
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(0.9, 0, 0, 25)
+statusLabel.Position = UDim2.new(0.05, 0, 0.95, 0)
+statusLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+statusLabel.Text = "READY"
+statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 12
+statusLabel.Parent = mainFrame
+
+-- LOGGING
+local function addLog(text, color)
+    local log = Instance.new("TextLabel")
+    log.Size = UDim2.new(1, 0, 0, 20)
+    log.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    log.Text = text
+    log.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+    log.Font = Enum.Font.Gotham
+    log.TextSize = 11
+    log.TextXAlignment = Enum.TextXAlignment.Left
+    log.Parent = logBox
+    task.wait(0.05)
+    logBox.CanvasPosition = Vector2.new(0, logBox.CanvasSize.Y.Offset)
+end
+
+-- SUSPICIOUS PATTERNS
+local suspiciousNames = {
+    "Remote", "RemoteEvent", "RemoteFunction", "BindableEvent", "BindableFunction",
+    "Script", "LocalScript", "ModuleScript", "RbxAnalyticsService", "TeleportService",
+    "HttpService", "HttpRbxApiService", "MarketplaceService", "DataStoreService",
+    "RunService", "ReplicatedFirst", "ReplicatedStorage", "ServerStorage"
+}
+
+local suspiciousSources = {
+    "loadstring", "getfenv", "setfenv", "getrenv", "setrenv", "syn", "protosmasher",
+    "Krnl", "Execute", "send request", "HttpService:GetAsync", "HttpService:PostAsync",
+    "game:HttpGet", "game:GetObjects", "PluginManager", "CreatePlugin", "Plugin",
+    "debug.setlocal", "debug.getlocal", "getrawmetatable", "setrawmetatable",
+    "hookfunction", "hookmetamethod", "newcclosure", "checkcaller", "getcallingscript",
+    "identifyexecutor", "getexecutorname", "queue_on_teleport", "rconsoleprint",
+    "writefile", "readfile", "listfiles", "makefolder", "delfile", "appendfile"
+}
+
+-- SCAN SINGLE INSTANCE
+local function scanInstance(instance, depth)
+    if depth > 8 then return {} end
+    local threats = {}
+    
+    for _, name in pairs(suspiciousNames) do
+        if instance.Name:find(name) then
+            table.insert(threats, "Suspicious name: " .. instance.Name)
+            break
+        end
+    end
+    
+    if instance:IsA("RemoteEvent") or instance:IsA("RemoteFunction") then
+        table.insert(threats, "Remote object: " .. instance.ClassName .. " - " .. instance.Name)
+    end
+    
+    if instance:IsA("Script") or instance:IsA("LocalScript") then
+        local source = instance.Source
+        if source then
+            for _, pattern in pairs(suspiciousSources) do
+                if source:find(pattern) then
+                    table.insert(threats, "Suspicious code in " .. instance.ClassName .. ": " .. pattern)
+                    break
+                end
+            end
+        end
+    end
+    
+    if instance:IsA("ModuleScript") and instance.Name == "MainModule" then
+        table.insert(threats, "Suspicious ModuleScript: " .. instance.Name)
+    end
+    
+    return threats
+end
+
+-- MAIN SCAN
+local function startScan()
+    for _, child in ipairs(logBox:GetChildren()) do
+        if child:IsA("TextLabel") then child:Destroy() end
+    end
+    
+    addLog("=== SCAN STARTED ===", Color3.fromRGB(255, 255, 0))
+    statusLabel.Text = "SCANNING..."
+    statusLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
+    
+    local threatsFound = 0
+    local totalScanned = 0
+    
+    local function traverse(inst, depth)
+        if depth > 10 then return end
+        totalScanned = totalScanned + 1
+        
+        local threats = scanInstance(inst, depth)
+        for _, threat in pairs(threats) do
+            threatsFound = threatsFound + 1
+            addLog("[!] " .. threat .. " | Path: " .. inst:GetFullName(), Color3.fromRGB(255, 100, 100))
+        end
+        
+        for _, child in pairs(inst:GetChildren()) do
+            traverse(child, depth + 1)
+        end
+    end
+    
+    local services = {
+        game, Workspace, ReplicatedStorage, ServerScriptService, Lighting,
+        game:GetService("Players"), game:GetService("TeleportService"),
+        game:GetService("HttpService"), game:GetService("RunService")
+    }
+    
+    for _, service in pairs(services) do
+        if service then
+            addLog("Scanning: " .. service.Name, Color3.fromRGB(150, 150, 255))
+            traverse(service, 0)
+        end
+    end
+    
+    addLog("=== RESULTS ===", Color3.fromRGB(255, 255, 0))
+    addLog("Total objects scanned: " .. totalScanned, Color3.fromRGB(200, 200, 200))
+    if threatsFound == 0 then
+        addLog("NO THREATS DETECTED", Color3.fromRGB(0, 255, 0))
+        statusLabel.Text = "SCAN COMPLETE: CLEAN"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        addLog("THREATS FOUND: " .. threatsFound, Color3.fromRGB(255, 0, 0))
+        statusLabel.Text = "SCAN COMPLETE: " .. threatsFound .. " THREATS"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+local function clearLog()
+    for _, child in ipairs(logBox:GetChildren()) do
+        if child:IsA("TextLabel") then child:Destroy() end
+    end
+    addLog("LOG CLEARED", Color3.fromRGB(200, 200, 200))
+    statusLabel.Text = "READY"
+    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+end
+
+scanBtn.MouseButton1Click:Connect(startScan)
+clearBtn.MouseButton1Click:Connect(clearLog)
+
+addLog("Scanner ready. Press SCAN to start.", Color3.fromRGB(0, 255, 0))
